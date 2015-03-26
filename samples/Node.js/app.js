@@ -16,7 +16,7 @@ app.use(express.static(__dirname + '/../../src'));
 // Handle uploads through Flow.js
 app.post('/upload', multipartMiddleware, function (req, res) {
     flow.post(req, function (status, filename, original_filename, identifier) {
-        console.log('POST', status, original_filename, identifier);
+        console.log('Flow: POST', status, original_filename, identifier);
         if (ACCESS_CONTROLL_ALLOW_ORIGIN) {
             res.header('Access-Control-Allow-Origin', '*');
         }
@@ -25,7 +25,7 @@ app.post('/upload', multipartMiddleware, function (req, res) {
 });
 
 app.options('/upload', function (req, res) {
-    console.log('OPTIONS');
+    console.log('Server: Options');
     if (ACCESS_CONTROLL_ALLOW_ORIGIN) {
         res.header('Access-Control-Allow-Origin', '*');
     }
@@ -35,7 +35,7 @@ app.options('/upload', function (req, res) {
 // Handle status checks on chunks through Flow.js
 app.get('/upload', function (req, res) {
     flow.get(req, function (status, filename, original_filename, identifier) {
-        console.log('GET', status);
+        console.log('Flow: GET', status);
         if (ACCESS_CONTROLL_ALLOW_ORIGIN) {
             res.header('Access-Control-Allow-Origin', '*');
         }
@@ -51,6 +51,7 @@ app.get('/upload', function (req, res) {
 });
 
 app.get('/download/:identifier', function (req, res) {
+    console.log('Server: Download');
     flow.write(req.params.identifier, res);
 });
 

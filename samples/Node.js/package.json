@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "start": "app.js",
+    "start": "node app.js",
     "develop": "NODE_ENV=development nodemon app.js",
     "build": "",
     "postinstall": ""
