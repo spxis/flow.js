@@ -64,7 +64,7 @@ module.exports = flow = function (temporaryFolder) {
         }
 
         // Check if the request is sane
-        if (chunkNumber == 0 || chunkSize == 0 || totalSize == 0 || identifier.length == 0 || filename.length == 0) {
+        if (chunkNumber === 0 || chunkSize === 0 || totalSize === 0 || identifier.length === 0 || filename.length === 0) {
             return 'non_flow_request';
         }
         var numberOfChunks = Math.max(Math.floor(totalSize / (chunkSize * 1.0)), 1);
@@ -82,11 +82,11 @@ module.exports = flow = function (temporaryFolder) {
                 // The chunk in the POST request isn't the correct size
                 return 'invalid_flow_request3';
             }
-            if (numberOfChunks > 1 && chunkNumber == numberOfChunks && fileSize != ((totalSize % chunkSize) + parseInt(chunkSize))) {
+            if (numberOfChunks > 1 && chunkNumber === numberOfChunks && fileSize != ((totalSize % chunkSize) + parseInt(chunkSize))) {
                 // The chunks in the POST is the last one, and the fil is not the correct size
                 return 'invalid_flow_request4';
             }
-            if (numberOfChunks == 1 && fileSize != totalSize) {
+            if (numberOfChunks === 1 && fileSize != totalSize) {
                 // The file is only a single chunk, and the data size does not fit
                 return 'invalid_flow_request5';
             }
@@ -150,7 +150,7 @@ module.exports = flow = function (temporaryFolder) {
         var original_filename = files[$.fileParameterName]['originalFilename'];
         var validation = validateRequest(chunkNumber, chunkSize, totalSize, identifier, filename, files[$.fileParameterName].size);
 
-        if (validation == 'valid') {
+        if (validation === 'valid') {
             var chunkFilename = getChunkFilename(chunkNumber, identifier);
 
             // Save the chunk (TODO: OVERWRITE)
@@ -193,7 +193,7 @@ module.exports = flow = function (temporaryFolder) {
     //   stream.on('finish', function(){...});
     $.write = function (identifier, writableStream, options) {
         options = options || {};
-        options.end = (typeof options['end'] == 'undefined' ? true : options['end']);
+        options.end = (typeof options['end'] === 'undefined' ? true : options['end']);
 
         console.log('flow.write() identifier: %s', identifier);
 
