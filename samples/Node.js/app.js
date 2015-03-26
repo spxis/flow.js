@@ -1,6 +1,7 @@
 // Modification credits to this post.
 // http://stackoverflow.com/questions/23449065/reassemble-binary-after-flow-js-upload-on-node-express-server
 var tempFolder = 'tmp';
+var appPrefix = 'flow-';
 
 process.env.TMPDIR = tempFolder; // to avoid the EXDEV rename error, see http://stackoverflow.com/q/21071303/76173
 
@@ -30,7 +31,7 @@ app.post('/upload', multipartMiddleware, function (req, res) {
 
         if (reassembleFileAfterPost && status === 'done' && currentTestChunk > numberOfChunks) {
             // The folder is guaranteed to be there from the upload, so no need to check.
-            var fileFolder = path.join('./', tempFolder, identifier);
+            var fileFolder = path.join('./', tempFolder, appPrefix + identifier);
             var stream = fs.createWriteStream(fileFolder + '/' + filename);
 
             // EDIT: I removed options {end: true} because it isn't needed
