@@ -8,14 +8,16 @@ var Stream = require('stream').Stream;
 
 module.exports = flow = function (temporaryFolder) {
     var $ = this;
+    $.maxFileSize = null;
     $.temporaryFolder = temporaryFolder;
     $.chunksFolder = 'chunks';
-    $.maxFileSize = null;
+    $.filePrefix = 'flow-';
     $.fileParameterName = 'file';
 
     console.log('flow.init() - temp folder: %s', $.temporaryFolder);
 
     try {
+        // Make sure the temporary folder exists on startup.
         fs.mkdirSync($.temporaryFolder);
     } catch (e) {
 
@@ -30,8 +32,8 @@ module.exports = flow = function (temporaryFolder) {
         identifier = cleanIdentifier(identifier);
 
         var identifierFolder = path.join(path.resolve($.temporaryFolder), identifier);
-        var chunksPath = path.join(identifierFolder, 'chunks');
-        var fullFilePath = path.join(chunksPath, './flow-' + identifier + '.' + chunkNumber);
+        var chunksPath = path.join(identifierFolder, $.chunksFolder);
+        var fullFilePath = path.join(chunksPath, './' + $.filePrefix + identifier + '.' + chunkNumber);
 
         console.log('getChunkFilename() - fullFilePath: ', fullFilePath);
 
@@ -46,7 +48,7 @@ module.exports = flow = function (temporaryFolder) {
 
         // Create the necessary temporary folders.
         var identifierFolder = path.join(path.resolve($.temporaryFolder), identifier);
-        var chunksFolder = path.join(identifierFolder, 'chunks');
+        var chunksFolder = path.join(identifierFolder, $.chunksFolder);
 
         try {
             console.log('validateRequest() - Creating identifierFolder: ', identifierFolder);
@@ -240,7 +242,7 @@ module.exports = flow = function (temporaryFolder) {
 
             var chunkFilename = getChunkFilename(number, identifier);
             var identifierFolder = path.join(path.resolve($.temporaryFolder), identifier);
-            var chunksPath = path.join(identifierFolder, 'chunks');
+            var chunksPath = path.join(identifierFolder, $.chunksFolder);
 
             //console.log('removing pipeChunkRm ', number, 'chunkFilename', chunkFilename);
             fs.exists(chunkFilename, function (exists) {
