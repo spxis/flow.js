@@ -11,7 +11,7 @@ module.exports = flow = function (temporaryFolder) {
     $.maxFileSize = null;
     $.temporaryFolder = temporaryFolder;
     $.chunksFolder = 'chunks';
-    $.filePrefix = 'flow-';
+    $.appPrefix = 'flow-';
     $.fileParameterName = 'file';
 
     console.log('flow.init() - temp folder: %s', $.temporaryFolder);
@@ -31,9 +31,9 @@ module.exports = flow = function (temporaryFolder) {
         // Clean up the identifier
         identifier = cleanIdentifier(identifier);
 
-        var identifierFolder = path.join(path.resolve($.temporaryFolder), identifier);
+        var identifierFolder = path.join(path.resolve($.temporaryFolder), $.appPrefix + identifier);
         var chunksPath = path.join(identifierFolder, $.chunksFolder);
-        var fullFilePath = path.join(chunksPath, './' + $.filePrefix + identifier + '.' + chunkNumber);
+        var fullFilePath = path.join(chunksPath, './' + $.appPrefix + identifier + '.' + chunkNumber);
 
         console.log('getChunkFilename() - fullFilePath: ', fullFilePath);
 
@@ -47,7 +47,7 @@ module.exports = flow = function (temporaryFolder) {
         identifier = cleanIdentifier(identifier);
 
         // Create the necessary temporary folders.
-        var identifierFolder = path.join(path.resolve($.temporaryFolder), identifier);
+        var identifierFolder = path.join(path.resolve($.temporaryFolder), $.appPrefix + identifier);
         var chunksFolder = path.join(identifierFolder, $.chunksFolder);
 
         try {
@@ -241,7 +241,7 @@ module.exports = flow = function (temporaryFolder) {
         var pipeChunkRm = function (number) {
 
             var chunkFilename = getChunkFilename(number, identifier);
-            var identifierFolder = path.join(path.resolve($.temporaryFolder), identifier);
+            var identifierFolder = path.join(path.resolve($.temporaryFolder), $.appPrefix + identifier);
             var chunksPath = path.join(identifierFolder, $.chunksFolder);
 
             //console.log('removing pipeChunkRm ', number, 'chunkFilename', chunkFilename);
@@ -265,7 +265,6 @@ module.exports = flow = function (temporaryFolder) {
                             options.onError(err);
                         }
                     });
-
 
                     if (options.onDone) {
                         options.onDone(identifier);
