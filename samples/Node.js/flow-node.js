@@ -1,3 +1,6 @@
+// Modification credits to this post.
+// http://stackoverflow.com/questions/23449065/reassemble-binary-after-flow-js-upload-on-node-express-server
+
 var fs = require('fs');
 var path = require('path');
 var util = require('util');
@@ -8,6 +11,8 @@ module.exports = flow = function (temporaryFolder) {
     $.temporaryFolder = temporaryFolder;
     $.maxFileSize = null;
     $.fileParameterName = 'file';
+
+    console.log('flow.init() - temp folder: %s', $.temporaryFolder);
 
     try {
         fs.mkdirSync($.temporaryFolder);
@@ -27,6 +32,8 @@ module.exports = flow = function (temporaryFolder) {
     }
 
     function validateRequest(chunkNumber, chunkSize, totalSize, identifier, filename, fileSize) {
+        console.log('flow.validateRequest(): %s, %s, %s, %s, %s, %s', chunkNumber, chunkSize, totalSize, identifier, filename, fileSize);
+
         // Clean up the identifier
         identifier = cleanIdentifier(identifier);
 
@@ -68,11 +75,17 @@ module.exports = flow = function (temporaryFolder) {
         var chunkNumber = req.param('flowChunkNumber', 0);
         var chunkSize = req.param('flowChunkSize', 0);
         var totalSize = req.param('flowTotalSize', 0);
-        var identifier = req.param('flowIdentifier', "");
-        var filename = req.param('flowFilename', "");
+        var identifier = req.param('flowIdentifier', '');
+        var filename = req.param('flowFilename', '');
 
-        if (validateRequest(chunkNumber, chunkSize, totalSize, identifier, filename) == 'valid') {
+        var result = validateRequest(chunkNumber, chunkSize, totalSize, identifier, filename);
+
+        console.log('flow.validateRequest() result: %s', result);
+
+        if (result === 'valid') {
             var chunkFilename = getChunkFilename(chunkNumber, identifier);
+            console.log('valid chunk received: %s', chunkFilename);
+
             fs.exists(chunkFilename, function (exists) {
                 if (exists) {
                     callback('found', chunkFilename, filename, identifier);
@@ -81,6 +94,7 @@ module.exports = flow = function (temporaryFolder) {
                 }
             });
         } else {
+            console.log('invalid request');
             callback('not_found', null, null, null);
         }
     };
@@ -93,6 +107,8 @@ module.exports = flow = function (temporaryFolder) {
 
         var fields = req.body;
         var files = req.files;
+
+        //console.log('# files: %s', files.size);
 
         var chunkNumber = fields['flowChunkNumber'];
         var chunkSize = fields['flowChunkSize'];
@@ -121,13 +137,15 @@ module.exports = flow = function (temporaryFolder) {
                         if (exists) {
                             currentTestChunk++;
                             if (currentTestChunk > numberOfChunks) {
-                                callback('done', filename, original_filename, identifier);
+                                // Add currentTestChunk and numberOfChunks to the callback
+                                callback('done', filename, original_filename, identifier, currentTestChunk, numberOfChunks);
                             } else {
                                 // Recursion
                                 testChunkExists();
                             }
                         } else {
-                            callback('partly_done', filename, original_filename, identifier);
+                            // Add currentTestChunk and numberOfChunks to the callback
+                            callback('partly_done', filename, original_filename, identifier, currentTestChunk, numberOfChunks);
                         }
                     });
                 };
@@ -150,6 +168,8 @@ module.exports = flow = function (temporaryFolder) {
         options = options || {};
         options.end = (typeof options['end'] == 'undefined' ? true : options['end']);
 
+        console.log('flow.write() identifier: %s', identifier);
+
         // Iterate over each chunk
         var pipeChunk = function (number) {
 
@@ -171,8 +191,12 @@ module.exports = flow = function (temporaryFolder) {
                     });
                 } else {
                     // When all the chunks have been piped, end the stream
-                    if (options.end) writableStream.end();
-                    if (options.onDone) options.onDone();
+                    if (options.end) {
+                        writableStream.end();
+                    }
+                    if (options.onDone) {
+                        options.onDone(identifier);
+                    }
                 }
             });
         };
@@ -181,6 +205,8 @@ module.exports = flow = function (temporaryFolder) {
 
     $.clean = function (identifier, options) {
         options = options || {};
+
+        console.log('flow.clean() identifier: %s', identifier);
 
         // Iterate over each chunk
         var pipeChunkRm = function (number) {
@@ -200,7 +226,9 @@ module.exports = flow = function (temporaryFolder) {
 
                 } else {
 
-                    if (options.onDone) options.onDone();
+                    if (options.onDone) {
+                        options.onDone(identifier);
+                    }
 
                 }
             });

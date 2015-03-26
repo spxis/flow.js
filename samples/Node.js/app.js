@@ -1,13 +1,17 @@
-process.env.TMPDIR = 'tmp'; // to avoid the EXDEV rename error, see http://stackoverflow.com/q/21071303/76173
+// Modification credits to this post.
+// http://stackoverflow.com/questions/23449065/reassemble-binary-after-flow-js-upload-on-node-express-server
+var tempFolder = 'tmp';
 
+process.env.TMPDIR = tempFolder; // to avoid the EXDEV rename error, see http://stackoverflow.com/q/21071303/76173
+
+var fs = require('fs');
 var express = require('express');
 var multipart = require('connect-multiparty');
 var multipartMiddleware = multipart();
-var flow = require('./flow-node.js')('tmp');
+var flow = require('./flow-node.js')(tempFolder);
 var app = express();
-
-// Configure access control allow origin header stuff
 var ACCESS_CONTROLL_ALLOW_ORIGIN = false;
+var reassembleFileAfterPost = true;
 
 // Host most stuff in the public folder
 app.use(express.static(__dirname + '/public'));
@@ -15,12 +19,20 @@ app.use(express.static(__dirname + '/../../src'));
 
 // Handle uploads through Flow.js
 app.post('/upload', multipartMiddleware, function (req, res) {
-    flow.post(req, function (status, filename, original_filename, identifier) {
-        console.log('Flow: POST', status, original_filename, identifier);
+    flow.post(req, function (status, filename, original_filename, identifier, currentTestChunk, numberOfChunks) {
+        console.log('Flow: POST', status, original_filename, identifier, currentTestChunk, numberOfChunks);
         if (ACCESS_CONTROLL_ALLOW_ORIGIN) {
             res.header('Access-Control-Allow-Origin', '*');
         }
         res.status(status).send();
+
+        if (reassembleFileAfterPost && status === 'done' && currentTestChunk > numberOfChunks) {
+            var stream = fs.createWriteStream('./' + tempFolder + '/' + filename);
+            // EDIT: I removed options {end: true} because it isn't needed
+            // and added {onDone: flow.clean} to remove the chunks after writing
+            // the file.
+            flow.write(identifier, stream, { onDone: flow.clean });
+        }
     });
 });
 
