@@ -35,13 +35,13 @@ module.exports = flow = function (temporaryFolder) {
         var chunksPath = path.join(identifierFolder, $.chunksFolder);
         var fullFilePath = path.join(chunksPath, './' + $.appPrefix + identifier + '.' + chunkNumber);
 
-        console.log('getChunkFilename() - fullFilePath: ', fullFilePath);
+        //console.log('getChunkFilename() - fullFilePath: ', fullFilePath);
 
         return fullFilePath;
     }
 
     function validateRequest(chunkNumber, chunkSize, totalSize, identifier, filename, fileSize) {
-        console.log('flow.validateRequest(): %s, %s, %s, %s, %s, %s', chunkNumber, chunkSize, totalSize, identifier, filename, fileSize);
+        //console.log('flow.validateRequest(): %s, %s, %s, %s, %s, %s', chunkNumber, chunkSize, totalSize, identifier, filename, fileSize);
 
         // Clean up the identifier
         identifier = cleanIdentifier(identifier);
@@ -51,20 +51,20 @@ module.exports = flow = function (temporaryFolder) {
         var chunksFolder = path.join(identifierFolder, $.chunksFolder);
 
         try {
-            console.log('validateRequest() - Creating identifierFolder: ', identifierFolder);
+            //console.log('validateRequest() - Creating identifierFolder: ', identifierFolder);
             fs.mkdirSync(identifierFolder);
         } catch (e) {
-            console.error(e);
+            //console.error(e);
         }
         try {
-            console.log('validateRequest() - Creating chunksFolder: ', chunksFolder);
+            //console.log('validateRequest() - Creating chunksFolder: ', chunksFolder);
             fs.mkdirSync(chunksFolder);
         } catch (e) {
-            console.error(e);
+            //console.error(e);
         }
 
         // Check if the request is sane
-        if (chunkNumber === 0 || chunkSize === 0 || totalSize === 0 || identifier.length === 0 || filename.length === 0) {
+        if (chunkNumber === '0' || chunkSize === '0' || totalSize === '0' || identifier.length === 0 || filename.length === 0) {
             return 'non_flow_request';
         }
         var numberOfChunks = Math.max(Math.floor(totalSize / (chunkSize * 1.0)), 1);
@@ -77,16 +77,16 @@ module.exports = flow = function (temporaryFolder) {
             return 'invalid_flow_request2';
         }
 
-        if (typeof(fileSize) != 'undefined') {
-            if (chunkNumber < numberOfChunks && fileSize != chunkSize) {
+        if (typeof(fileSize) !== 'undefined') {
+            if (chunkNumber < numberOfChunks && fileSize !== chunkSize) {
                 // The chunk in the POST request isn't the correct size
                 return 'invalid_flow_request3';
             }
-            if (numberOfChunks > 1 && chunkNumber === numberOfChunks && fileSize != ((totalSize % chunkSize) + parseInt(chunkSize))) {
+            if (numberOfChunks > 1 && chunkNumber === numberOfChunks.toString() && fileSize !== ((totalSize % chunkSize) + parseInt(chunkSize)).toString()) {
                 // The chunks in the POST is the last one, and the fil is not the correct size
                 return 'invalid_flow_request4';
             }
-            if (numberOfChunks === 1 && fileSize != totalSize) {
+            if (numberOfChunks === 1 && fileSize !== totalSize) {
                 // The file is only a single chunk, and the data size does not fit
                 return 'invalid_flow_request5';
             }
@@ -136,19 +136,19 @@ module.exports = flow = function (temporaryFolder) {
 
         //console.log('# files: %s', files.size);
 
-        var chunkNumber = fields['flowChunkNumber'];
-        var chunkSize = fields['flowChunkSize'];
-        var totalSize = fields['flowTotalSize'];
-        var identifier = cleanIdentifier(fields['flowIdentifier']);
-        var filename = fields['flowFilename'];
+        var chunkNumber = fields.flowChunkNumber;
+        var chunkSize = fields.flowChunkSize;
+        var totalSize = fields.flowTotalSize;
+        var identifier = cleanIdentifier(fields.flowIdentifier);
+        var filename = fields.flowFilename;
 
         if (!files[$.fileParameterName] || !files[$.fileParameterName].size) {
             callback('invalid_flow_request', null, null, null);
             return;
         }
 
-        var original_filename = files[$.fileParameterName]['originalFilename'];
-        var validation = validateRequest(chunkNumber, chunkSize, totalSize, identifier, filename, files[$.fileParameterName].size);
+        var original_filename = files[$.fileParameterName].originalFilename;
+        var validation = validateRequest(chunkNumber, chunkSize, totalSize, identifier, filename, files[$.fileParameterName].size.toString());
 
         if (validation === 'valid') {
             var chunkFilename = getChunkFilename(chunkNumber, identifier);
@@ -193,7 +193,7 @@ module.exports = flow = function (temporaryFolder) {
     //   stream.on('finish', function(){...});
     $.write = function (identifier, writableStream, options) {
         options = options || {};
-        options.end = (typeof options['end'] === 'undefined' ? true : options['end']);
+        options.end = (typeof options.end === 'undefined' ? true : options.end);
 
         console.log('flow.write() identifier: %s', identifier);
 
