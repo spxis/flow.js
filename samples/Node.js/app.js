@@ -5,6 +5,7 @@ var tempFolder = 'tmp';
 process.env.TMPDIR = tempFolder; // to avoid the EXDEV rename error, see http://stackoverflow.com/q/21071303/76173
 
 var fs = require('fs');
+var path = require('path');
 var express = require('express');
 var multipart = require('connect-multiparty');
 var multipartMiddleware = multipart();
@@ -12,6 +13,7 @@ var flow = require('./flow-node.js')(tempFolder);
 var app = express();
 var ACCESS_CONTROLL_ALLOW_ORIGIN = false;
 var reassembleFileAfterPost = true;
+var removeChunksAfterPost = false; // Not fully supported do to extra logic required for download route/method.
 
 // Host most stuff in the public folder
 app.use(express.static(__dirname + '/public'));
@@ -27,11 +29,14 @@ app.post('/upload', multipartMiddleware, function (req, res) {
         res.status(status).send();
 
         if (reassembleFileAfterPost && status === 'done' && currentTestChunk > numberOfChunks) {
-            var stream = fs.createWriteStream('./' + tempFolder + '/' + filename);
+            // The folder is guaranteed to be there from the upload, so no need to check.
+            var fileFolder = path.join('./', tempFolder, identifier);
+            var stream = fs.createWriteStream(fileFolder + '/' + filename);
+
             // EDIT: I removed options {end: true} because it isn't needed
             // and added {onDone: flow.clean} to remove the chunks after writing
             // the file.
-            flow.write(identifier, stream, { onDone: flow.clean });
+            flow.write(identifier, stream, {onDone: removeChunksAfterPost ? flow.clean : null});
         }
     });
 });

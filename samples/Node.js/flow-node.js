@@ -9,6 +9,7 @@ var Stream = require('stream').Stream;
 module.exports = flow = function (temporaryFolder) {
     var $ = this;
     $.temporaryFolder = temporaryFolder;
+    $.chunksFolder = 'chunks';
     $.maxFileSize = null;
     $.fileParameterName = 'file';
 
@@ -27,8 +28,14 @@ module.exports = flow = function (temporaryFolder) {
     function getChunkFilename(chunkNumber, identifier) {
         // Clean up the identifier
         identifier = cleanIdentifier(identifier);
-        // What would the file name be?
-        return path.resolve($.temporaryFolder, './flow-' + identifier + '.' + chunkNumber);
+
+        var identifierFolder = path.join(path.resolve($.temporaryFolder), identifier);
+        var chunksPath = path.join(identifierFolder, 'chunks');
+        var fullFilePath = path.join(chunksPath, './flow-' + identifier + '.' + chunkNumber);
+
+        console.log('getChunkFilename() - fullFilePath: ', fullFilePath);
+
+        return fullFilePath;
     }
 
     function validateRequest(chunkNumber, chunkSize, totalSize, identifier, filename, fileSize) {
@@ -36,6 +43,23 @@ module.exports = flow = function (temporaryFolder) {
 
         // Clean up the identifier
         identifier = cleanIdentifier(identifier);
+
+        // Create the necessary temporary folders.
+        var identifierFolder = path.join(path.resolve($.temporaryFolder), identifier);
+        var chunksFolder = path.join(identifierFolder, 'chunks');
+
+        try {
+            console.log('validateRequest() - Creating identifierFolder: ', identifierFolder);
+            fs.mkdirSync(identifierFolder);
+        } catch (e) {
+            console.error(e);
+        }
+        try {
+            console.log('validateRequest() - Creating chunksFolder: ', chunksFolder);
+            fs.mkdirSync(chunksFolder);
+        } catch (e) {
+            console.error(e);
+        }
 
         // Check if the request is sane
         if (chunkNumber == 0 || chunkSize == 0 || totalSize == 0 || identifier.length == 0 || filename.length == 0) {
@@ -123,6 +147,7 @@ module.exports = flow = function (temporaryFolder) {
 
         var original_filename = files[$.fileParameterName]['originalFilename'];
         var validation = validateRequest(chunkNumber, chunkSize, totalSize, identifier, filename, files[$.fileParameterName].size);
+
         if (validation == 'valid') {
             var chunkFilename = getChunkFilename(chunkNumber, identifier);
 
@@ -208,10 +233,14 @@ module.exports = flow = function (temporaryFolder) {
 
         console.log('flow.clean() identifier: %s', identifier);
 
+        if (!identifier) { return; }
+
         // Iterate over each chunk
         var pipeChunkRm = function (number) {
 
             var chunkFilename = getChunkFilename(number, identifier);
+            var identifierFolder = path.join(path.resolve($.temporaryFolder), identifier);
+            var chunksPath = path.join(identifierFolder, 'chunks');
 
             //console.log('removing pipeChunkRm ', number, 'chunkFilename', chunkFilename);
             fs.exists(chunkFilename, function (exists) {
@@ -219,12 +248,22 @@ module.exports = flow = function (temporaryFolder) {
 
                     console.log('exist removing ', chunkFilename);
                     fs.unlink(chunkFilename, function (err) {
-                        if (err && options.onError) options.onError(err);
+                        if (err && options.onError) {
+                            options.onError(err);
+                        }
                     });
 
                     pipeChunkRm(number + 1);
 
                 } else {
+
+                    // No files remaining to delete. Try deleting the containing folder.
+                    fs.rmdir(chunksPath, function (err) {
+                        if (err && options.onError) {
+                            options.onError(err);
+                        }
+                    });
+
 
                     if (options.onDone) {
                         options.onDone(identifier);
