@@ -12,7 +12,7 @@ var multipart = require('connect-multiparty');
 var multipartMiddleware = multipart();
 var flow = require('./flow-node.js')(tempFolder);
 var app = express();
-var ACCESS_CONTROLL_ALLOW_ORIGIN = false;
+var ACCESS_CONTROLL_ALLOW_ORIGIN = true;
 var reassembleFileAfterPost = true;
 var removeChunksAfterPost = false; // Not fully supported do to extra logic required for download route/method.
 
